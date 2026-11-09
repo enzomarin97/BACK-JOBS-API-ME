@@ -10,6 +10,8 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
 
 @Component
 public class UserApiRepository {
@@ -25,7 +27,7 @@ public class UserApiRepository {
                 .build(),
                 new ObjectMapper(),
                 "https://reqres.in/api/users",
-                "free_user_3HYTiqu2JKQ4TfGq884xW5mqfrd");
+                System.getenv().getOrDefault("REQRES_API_KEY", ""));
     }
 
     public UserApiRepository(HttpClient httpClient, ObjectMapper objectMapper, String baseUrl, String apiKey) {
@@ -60,6 +62,50 @@ public class UserApiRepository {
     }
 
     public User getUserById(int id) {
+        return getUsers(1).getData().stream().filter(user -> id == user.getId()).findFirst().orElse(null);
+    }
+
+    public User createUser(User user) {
+        try {
+            Map<String, String> userMap = new HashMap<>();
+            userMap.put("name", user.getFirstName());
+            userMap.put("job", user.getLastName());
+            String requestBody = objectMapper.writeValueAsString(userMap);
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl))
+                    .header("Accept", "application/json")
+                    .header("X-API-KEY", apiKey)
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(
+                    request,
+                    HttpResponse.BodyHandlers.ofString()
+            );
+
+            if (response.statusCode() != 201) {
+                throw new RuntimeException("Error en ReqRes API. Código: " + response.statusCode());
+            }
+
+            User createdUser = objectMapper.readValue(response.body(), User.class);
+            createdUser.setEmail(user.getEmail());
+            createdUser.setFirstName(user.getFirstName());
+            createdUser.setLastName(user.getLastName());
+            createdUser.setAvatar(user.getAvatar());
+            createdUser.setJobId(user.getJobId());
+            return createdUser;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("La creación del usuario fue interrumpida", e);
+        } catch (Exception e) {
+            throw new RuntimeException("Error al crear el usuario en la API: " + e.getMessage(), e);
+        }
+    }
+
+/*
+    public User getUserById(int id) {
         try {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(baseUrl + "/" + id))
@@ -82,5 +128,33 @@ public class UserApiRepository {
             throw new RuntimeException("Error al conectar con la API de usuarios: " + e.getMessage(), e);
         }
     }
-}
+*/
+    public void updateUser(User user) {
+        try {
+            Map<String, String> userMap = new HashMap<>();
+            userMap.put("name", user.getFirstName()); //success value only "morpheus"
+            userMap.put("job",user.getLastName()); //succes value only "zion resident"
+            String requestBody = objectMapper.writeValueAsString(userMap);
 
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/" + user.getId()))
+                    .header("Accept", "application/json")
+                    .header("X-API-KEY", apiKey)
+                    .header("Content-Type", "application/json")
+                    .PUT(HttpRequest.BodyPublishers.ofString(requestBody))
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(
+                    request,
+                    HttpResponse.BodyHandlers.ofString()
+            );
+
+            if (response.statusCode() != 200) {
+                throw new RuntimeException("Error en ReqRes API. Código: " + response.statusCode());
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Error al conectar con la API de usuarios: " + e.getMessage(), e);
+        }
+    }
+
+}

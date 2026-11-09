@@ -1,0 +1,53 @@
+type Query {
+    assigneds(request: AssignRequest): [UserJobAssigned]
+    userById(id: ID!): User
+    jobById(id: ID!): Job
+}
+type Mutation {
+    addJob(request: JobRequest): Job
+    addUser(request: UserRequest): User
+}
+
+type UserJobAssigned {
+    users: [User]
+    job: Job
+}
+
+type User {
+    id: ID
+    firstName: String
+    lastName: String
+    email:String
+    avatar: String
+    jobId: Int
+    job:Job
+
+}
+
+type Job {
+    name:String
+    salary:Float
+    hours:Float
+    id:ID
+    resources:Float
+}
+
+input AssignRequest {
+    requestNumber: Int
+    clientName: String
+}
+
+input JobRequest {
+    name: String
+    salary: Float
+    hours: Float
+    resources: Float
+}
+
+input UserRequest {
+    email: String
+    firstName: String
+    lastName: String
+    avatar: String
+    jobId: Int
+}

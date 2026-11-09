@@ -7,6 +7,17 @@ public class Job {
     private int id;
     private int resources;
 
+    public Job(String name, double salary, int hours, int id, int resources) {
+        this.name = name;
+        this.salary = salary;
+        this.hours = hours;
+        this.id = id;
+        this.resources = resources;
+    }
+
+    public Job() {
+    }
+
     public String getName() {
         return name;
     }
